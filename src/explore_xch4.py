@@ -27,7 +27,7 @@ from matplotlib.ticker import MaxNLocator
 BBOX = (52.5, 37.5, 55.5, 40.5)  # west, south, east, north: western Turkmenistan, a known methane hotspot
 START, END = "2023-01-01", "2026-01-01"  # END is exclusive
 COLLECTION = "COPERNICUS/S5P/OFFL/L3_CH4"
-BAND = "CH4_column_volume_mixing_ratio_dry_air"  # ppb
+BAND = "CH4_column_volume_mixing_ratio_dry_air_bias_corrected"  # ppb, corrected for surface albedo
 SCALE = 7000  # metres, close to TROPOMI's native resolution
 GRID_STEP = 0.05  # degrees, ~4-5.5 km here: the map grid, no finer than the data supports
 MAP_LIMIT = 20  # ppb, colour scale runs from -MAP_LIMIT to +MAP_LIMIT

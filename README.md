@@ -1,10 +1,17 @@
 # methane-s5p-explorer
 
-[![CI](https://github.com/OWNER/methane-s5p-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/methane-s5p-explorer/actions/workflows/ci.yml)
+[![CI](https://github.com/JackPhilpott/methane-s5p-explorer/actions/workflows/ci.yml/badge.svg)](https://github.com/JackPhilpott/methane-s5p-explorer/actions/workflows/ci.yml)
 
-A small exploration of Sentinel-5P TROPOMI methane (XCH4) over western Turkmenistan, a known
-methane hotspot, using the Google Earth Engine Python API. It makes two figures: a map of where the
-three-year mean XCH4 sits above or below the regional median, and a monthly time series.
+A small exploration of Sentinel-5P TROPOMI methane (XCH4) over western Turkmenistan, using the
+Google Earth Engine Python API. The Caspian coast of Turkmenistan is one of the largest methane
+hotspots in the world. TROPOMI has detected strong methane enhancements there, and
+higher-resolution satellites have traced them to individual sources in oil fields, most of them
+flares venting gas instead of burning it
+([Irakulis-Loitxate et al., 2022](https://doi.org/10.1021/acs.est.1c04873)).
+
+The script writes two figures and a CSV to `outputs/`: a map of where the three-year mean XCH4
+sits above or below the regional median, a chart of the monthly regional mean, and the monthly
+values behind that chart.
 
 It is an exploration, not an emissions analysis. The [Limitations](#limitations) section explains why.
 
@@ -26,14 +33,17 @@ Earth Engine keeps retrievals with a quality value of at least 50% and regrids t
 
 ## What the script does
 
-[`src/explore_xch4.py`](src/explore_xch4.py) selects the XCH4 band for January 2023 to December 2025
-over a 3° x 3° box (52.5-55.5°E, 37.5-40.5°N) and then:
+[`src/explore_xch4.py`](src/explore_xch4.py) selects the albedo-bias-corrected XCH4 band,
+`CH4_column_volume_mixing_ratio_dry_air_bias_corrected` (see [Limitations](#limitations) for why),
+for January 2023 to December 2025 over a 3° x 3° box (52.5-55.5°E, 37.5-40.5°N) and then:
 
-1. **Anomaly map.** Averages every valid retrieval per pixel over the three years, samples the mean
-   onto a 0.05° grid, and subtracts the median of all pixels in the box. Red is above the regional
-   median and blue is below it. Hatching marks pixels with no valid retrievals at all.
-2. **Monthly series.** For each month, takes the mean XCH4 over the box and the mean number of valid
-   retrievals per pixel, which shows how much data each month actually had.
+1. **Anomaly map** (`xch4_anomaly.png`). Averages every valid retrieval per pixel over the three
+   years, samples the mean onto a 0.05° grid, and subtracts the median of all pixels in the box. Red
+   is above the regional median and blue is below it. Hatching marks pixels with no valid
+   retrievals at all.
+2. **Monthly series** (`xch4_monthly.csv` and the chart `xch4_monthly.png`). For each month, takes
+   the mean XCH4 over the box and the mean number of valid retrievals per pixel, which shows how
+   much data each month actually had.
 
 <!-- FIGURES -->
 
@@ -51,7 +61,7 @@ pip install -r requirements.txt
 
 earthengine authenticate           # once per machine; opens a browser
 export EE_PROJECT=your-project-id  # PowerShell: $env:EE_PROJECT = "your-project-id"
-python src/explore_xch4.py         # writes the three files in outputs/
+python src/explore_xch4.py         # writes the two figures and the CSV to outputs/
 
 pytest                             # unit tests, no Earth Engine needed
 ruff check . && ruff format --check .
@@ -67,7 +77,8 @@ docker run --rm methane-s5p-explorer
 ```
 
 To run the exploration itself in the container, pass in your project ID and your existing Earth
-Engine credentials (mounted read-only), and mount `outputs/` so the files land on your machine:
+Engine credentials (mounted read-only), and mount `outputs/` so the two figures and the CSV land on
+your machine:
 
 ```bash
 docker run --rm \
@@ -87,6 +98,17 @@ data), and the two plotting functions.
 requirements, runs `ruff check`, `ruff format --check` and `pytest`, then builds the Docker image and
 runs the tests inside it. CI makes no Earth Engine calls and holds no credentials.
 
+## Data and licence
+
+- **Sentinel-5P TROPOMI methane**, Level 3 offline product
+  [`COPERNICUS/S5P/OFFL/L3_CH4`](https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S5P_OFFL_L3_CH4),
+  produced by the European Union/ESA/Copernicus and hosted by Google Earth Engine. The script reads
+  it through the Earth Engine API when it runs, so there is nothing to download in advance.
+- **Licence:** free, full and open access under the
+  [Copernicus Sentinel Data Terms and Conditions](https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice),
+  which allow reproduction, distribution and modification with attribution. The figures and CSV in
+  `outputs/` contain modified Copernicus Sentinel data 2023-2025.
+
 ## Limitations
 
 **Coarse pixels can't resolve individual plumes.** A methane plume from a single well pad,
@@ -99,12 +121,17 @@ Landsat. UNEP's [Methane Alert and Response System](https://methanedata.unep.org
 works in tiers: TROPOMI screens wide areas and flags hotspots, and high-resolution imagers then
 attribute plumes to facilities. This repo only does the first, coarse step, and only roughly.
 
-**Clouds and surface albedo cause gaps.** The retrieval needs clear sky and enough reflected
-sunlight. Clouds block the view, and dark surfaces such as water reflect too little shortwave
-infrared, so those retrievals are filtered out. Bright or varied surfaces can bias XCH4 even when
-retrievals pass the filter. The Earth Engine product also has an albedo-bias-corrected band
-(`CH4_column_volume_mixing_ratio_dry_air_bias_corrected`), which would be a better choice for
-comparing pixels over very different surfaces. This script uses the standard band.
+**Clouds and surface albedo cause gaps and biases.** The retrieval needs clear sky and enough
+reflected sunlight. Clouds block the view, and dark surfaces such as water reflect too little
+shortwave infrared, so those retrievals are filtered out. Surface brightness also biases the
+retrievals that pass the filter: the uncorrected XCH4 reads too low over dark surfaces and too high
+over bright ones. This script therefore uses the albedo-bias-corrected band
+(`CH4_column_volume_mixing_ratio_dry_air_bias_corrected`) rather than the standard one. It carries
+the a posteriori correction described by
+[Lorente et al. (2021)](https://doi.org/10.5194/amt-14-665-2021), and that matters here because
+the anomaly map compares pixels over very different surfaces, from desert to coast. The correction
+removes most of the albedo dependence but not all of it: the authors note that very dark, very
+bright and snow-covered scenes remain the hardest cases.
 
 **The anomaly is a simple comparison with the regional median, not an emission estimate.** A pixel
 above the median may be near a source, but it can also reflect wind carrying methane in or out,
@@ -117,6 +144,19 @@ as a mass balance or an atmospheric inversion, none of which this repo attempts.
 methane, the seasonal cycle, and changes in which parts of the box had valid data that month. Months
 with few retrievals are not like-for-like with well-sampled months.
 
+## References
+
+- Irakulis-Loitxate, I., Guanter, L., Maasakkers, J. D., Zavala-Araiza, D. and Aben, I. (2022).
+  Satellites detect abatable super-emissions in one of the world's largest methane hotspot regions.
+  *Environmental Science & Technology*, 56(4), 2143-2152.
+  [doi:10.1021/acs.est.1c04873](https://doi.org/10.1021/acs.est.1c04873)
+- Lorente, A., Borsdorff, T., Butz, A., Hasekamp, O., aan de Brugh, J., Schneider, A., et al.
+  (2021). Methane retrieved from TROPOMI: improvement of the data product and validation of the
+  first 2 years of measurements. *Atmospheric Measurement Techniques*, 14(1), 665-684.
+  [doi:10.5194/amt-14-665-2021](https://doi.org/10.5194/amt-14-665-2021)
+
 ## Licence
 
 [MIT](LICENSE)
+
+Built with AI-assisted development, reviewed and tested by me.
