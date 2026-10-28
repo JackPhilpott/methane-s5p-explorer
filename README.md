@@ -13,6 +13,8 @@ The script writes two figures and a CSV to `outputs/`: a map of where the three-
 sits above or below the regional median, a chart of the monthly regional mean, and the monthly
 values behind that chart.
 
+**Status:** First full Earth Engine run and figures coming shortly.
+
 It is an exploration, not an emissions analysis. The [Limitations](#limitations) section explains why.
 
 ## What TROPOMI XCH4 is
@@ -106,8 +108,8 @@ runs the tests inside it. CI makes no Earth Engine calls and holds no credential
   it through the Earth Engine API when it runs, so there is nothing to download in advance.
 - **Licence:** free, full and open access under the
   [Copernicus Sentinel Data Terms and Conditions](https://sentinels.copernicus.eu/documents/247904/690755/Sentinel_Data_Legal_Notice),
-  which allow reproduction, distribution and modification with attribution. The figures and CSV in
-  `outputs/` contain modified Copernicus Sentinel data 2023-2025.
+  which allow reproduction, distribution and modification with attribution. The figures and CSV the
+  script writes contain modified Copernicus Sentinel data 2023-2025.
 
 ## Limitations
 
