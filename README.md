@@ -123,7 +123,10 @@ attribute plumes to facilities. This repo only does the first, coarse step, and 
 
 **Clouds and surface albedo cause gaps and biases.** The retrieval needs clear sky and enough
 reflected sunlight. Clouds block the view, and dark surfaces such as water reflect too little
-shortwave infrared, so those retrievals are filtered out. Surface brightness also biases the
+shortwave infrared, so most of those retrievals are filtered out. There are two exceptions: since
+November 2021 the product also includes sun-glint observations over the sea, and the dataset notes
+say that not all pixels over inland water are filtered. Both matter here, because the western edge
+of the box is the Caspian Sea. Surface brightness also biases the
 retrievals that pass the filter: the uncorrected XCH4 reads too low over dark surfaces and too high
 over bright ones. This script therefore uses the albedo-bias-corrected band
 (`CH4_column_volume_mixing_ratio_dry_air_bias_corrected`) rather than the standard one. It carries
